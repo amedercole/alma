@@ -1,6 +1,11 @@
 # Alma — Lead Management
 
-**▶ Live demo: <https://alma-production-2def.up.railway.app>**
+> ## ▶ To use the application, go to the live app:
+>
+> ## <https://alma-production-2def.up.railway.app>
+>
+> Open the link, enter any email on the start screen, and you're in. No install
+> needed. (Full walkthrough: [How to use](#how-to-use).)
 
 A full-stack application for capturing and managing prospect **leads**.
 
@@ -77,9 +82,10 @@ it is what seeds the attorney account on Railway deploys.)
 
 Full walkthrough: [`docs/USAGE.md`](./docs/USAGE.md). In short:
 
-**Start (demo gate).** Open the app → on the **"Demo project"** start screen enter
-an email → **Enter demo**. You're signed in as an attorney with that email (shown
-bottom-right). Refreshing the page returns you to the start screen.
+**Start (demo gate).** Go to **<https://alma-production-2def.up.railway.app>** →
+on the **"Demo project"** start screen enter an email → **Enter demo**. You're
+signed in as an attorney with that email (shown bottom-right). Refreshing the
+page returns you to the start screen.
 
 **As a prospect — submit a lead** (`/leads/new`): enter name + email, upload a
 resume (PDF/DOC/DOCX, ≤5 MB), submit. A confirmation email goes to the prospect

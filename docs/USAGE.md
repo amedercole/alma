@@ -1,5 +1,7 @@
 # How to use Alma
 
+> **▶ To use the app, go to: <https://alma-production-2def.up.railway.app>**
+
 Alma has two user types:
 
 - **Prospect** — a member of the public who submits a lead (no account).
