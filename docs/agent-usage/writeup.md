@@ -22,7 +22,7 @@ prove behavior empirically rather than trust memory: it ran `prisma generate`/
 `migrate` against a live Postgres, exercised every endpoint with `curl`, and ran
 37 unit/integration tests.
 
-**A subtly-bad output it caught (and fixed).** Two are logged in
+**A subtly-bad output it caught (and fixed).** Several are logged in
 [`../../NOTES.md`](../../NOTES.md); the sharpest: the login service does a
 password compare even when the email is unknown (to avoid leaking which emails
 exist). The agent's first version compared against a _hand-written_ fake string

@@ -16,7 +16,7 @@ A full-stack application for capturing and managing prospect **leads**.
 | Database   | PostgreSQL via Prisma 7 (driver adapter `@prisma/adapter-pg`)    |
 | Validation | Zod                                                              |
 | Auth       | JWT session (`jose`) in an httpOnly cookie + `bcryptjs`          |
-| Email      | Resend (console fallback when no API key is set)                 |
+| Email      | Pluggable: SMTP (e.g. Gmail) or Resend (HTTPS); console in dev   |
 | Storage    | Pluggable `StorageService` — local disk / Railway volume (or S3) |
 | Tests      | Vitest (unit + integration) and Playwright (E2E)                 |
 | Deploy     | Railway (Postgres + a volume for resume files)                   |
@@ -38,7 +38,8 @@ npm install
 # 2. Configure environment
 cp .env.example .env
 #    The defaults match the docker-compose database below. For real emails,
-#    set RESEND_API_KEY; otherwise emails are printed to the server console.
+#    configure SMTP or Resend (see "Email" below); otherwise emails are just
+#    printed to the server console.
 
 # 3. Start Postgres
 docker compose up -d
@@ -71,9 +72,31 @@ npm run dev            # http://localhost:3000
 | `npm test`                  | Unit + integration tests             |
 | `npm run test:e2e`          | Playwright end-to-end tests          |
 
+## Email
+
+On a new lead, two emails are sent — best-effort and fire-and-forget, so the
+public form never blocks on delivery: a **confirmation to the prospect** (the
+address they submitted) and a **notification to the attorney**
+(`ATTORNEY_NOTIFY_EMAIL`). The provider is auto-selected:
+
+1. **SMTP** — set `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` (e.g.
+   Gmail with an App Password). Sends _from your own address_ with no domain
+   setup.
+2. **Resend** — set `RESEND_API_KEY` (HTTPS API). To send from your own address,
+   verify a domain in Resend and point `EMAIL_FROM` at it
+   (e.g. `Alma Leads <leads@yourdomain.com>`).
+3. **Console** — neither configured: emails are logged, not sent (local-dev
+   default).
+
+> **On Railway, outbound SMTP is blocked**, so use **Resend** there (it's HTTPS).
+> Gmail/SMTP is best for local development or hosts that allow SMTP egress.
+
 ## Deployment (Railway)
 
-A full walkthrough lives in [`DESIGN.md`](./DESIGN.md#10-deployment-railway). In short:
-provision a Postgres plugin, attach a volume mounted at `STORAGE_LOCAL_DIR`, set
-the environment variables from `.env.example`, and Railway builds with
-`npm run build` and applies migrations with `npm run db:migrate:deploy`.
+A full walkthrough lives in [`DESIGN.md`](./DESIGN.md#10-deployment-railway). In
+short: provision a Postgres plugin, attach a volume mounted at
+`STORAGE_LOCAL_DIR`, set the environment variables from `.env.example` (use
+**Resend** for email — SMTP is blocked on Railway), and deploy. `railway.json`
+builds with `npm run build`, and its pre-deploy step runs
+`prisma migrate deploy` + `npm run db:seed` so migrations are applied and the
+attorney account exists on first boot.

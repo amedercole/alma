@@ -13,7 +13,7 @@ for coding-agent usage see [`NOTES.md`](./NOTES.md).
 | On submit, email the prospect **and** an attorney | `EmailService.sendLeadCreatedEmails` (best-effort, both recipients) |
 | Internal UI behind auth listing all leads         | `/dashboard` (server component) guarded by the DAL                  |
 | State: `PENDING` → `REACHED_OUT`, set manually    | `lead.state.ts` state machine + `PATCH /api/leads/:id`              |
-| Persist data + email integration                  | Postgres (Prisma 7) + a `StorageService` for files + Resend         |
+| Persist data + email integration                  | Postgres (Prisma 7) + a `StorageService` for files + SMTP/Resend    |
 | Production-shaped structure                       | Layered server (`route → service → repository`), tests, CI          |
 
 ## 2. Architecture
@@ -156,9 +156,11 @@ sequenceDiagram
   API-->>P: 201 + lead, redirect to /thank-you
 ```
 
-Emails are sent with `Promise.allSettled` and failures are logged, not thrown:
-a transient mail outage must never drop a captured lead. See
-[future work](#11-future-work) for the durable-outbox upgrade.
+Email is dispatched **fire-and-forget** (not awaited) with `Promise.allSettled`
+and per-message error logging, so a slow or failing mail provider never blocks
+the prospect's response or drops a captured lead — the long-running server
+finishes the send after responding. See [future work](#11-future-work) for the
+durable-outbox upgrade.
 
 ## 7. Key decisions & trade-offs
 
@@ -214,25 +216,30 @@ a transient mail outage must never drop a captured lead. See
 
 The app deploys as **one service** + a **Postgres** plugin + a **volume** for
 resume files. `railway.json` pins the build/start and runs
-`prisma migrate deploy` before each release.
+`prisma migrate deploy && npm run db:seed` before each release.
 
 1. **Postgres:** add the Railway PostgreSQL plugin.
 2. **App service:** deploy this GitHub repo. Build is `npm run build`
-   (`prisma generate` + `next build`); `railway.json` runs
-   `prisma migrate deploy` as the pre-deploy step and starts with
-   `npm run start` (Next reads Railway's `PORT`).
+   (`prisma generate` + `next build`); `railway.json`'s pre-deploy step runs
+   `prisma migrate deploy && npm run db:seed` (applies migrations and upserts the
+   attorney account), and starts with `npm run start` (Next reads Railway's
+   `PORT`).
 3. **Volume:** attach a volume to the app service mounted at `/data` and set
    `STORAGE_LOCAL_DIR=/data/uploads`.
 4. **Environment variables** (app service):
    `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SESSION_SECRET` (e.g.
    `openssl rand -base64 32`), `STORAGE_DRIVER=local`,
-   `STORAGE_LOCAL_DIR=/data/uploads`, `RESEND_API_KEY`, `EMAIL_FROM`,
-   `ATTORNEY_NOTIFY_EMAIL`, and `NEXT_PUBLIC_APP_URL`.
+   `STORAGE_LOCAL_DIR=/data/uploads`, the email vars (step 6),
+   `NEXT_PUBLIC_APP_URL`, and the `SEED_ATTORNEY_*` login credentials.
 5. **Public URL:** generate a domain, then set `NEXT_PUBLIC_APP_URL` to it and
    redeploy (it is baked in at build time, so it must be set before the build
    that ships).
-6. **Resend:** verify a sending domain for delivery to arbitrary addresses; the
-   `onboarding@resend.dev` sender only reaches your own account email.
+6. **Email — use Resend on Railway.** Railway **blocks outbound SMTP**, so Gmail/
+   SMTP will not work there; set `RESEND_API_KEY` and an `EMAIL_FROM` on a domain
+   you've **verified in Resend** (e.g. `Alma Leads <leads@yourdomain.com>`) to
+   deliver to any recipient. Without a verified domain, `onboarding@resend.dev`
+   only reaches your own Resend account email. (SMTP remains the option for local
+   dev or hosts that allow SMTP egress.)
 
 ## 11. Future work
 
