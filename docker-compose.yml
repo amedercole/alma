@@ -1,0 +1,23 @@
+# Local Postgres for development & integration tests.
+# Mirrors the managed Postgres you will provision on Railway in production.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: alma-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alma
+      POSTGRES_PASSWORD: alma
+      POSTGRES_DB: alma
+    ports:
+      - "5432:5432"
+    volumes:
+      - alma-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alma -d alma"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  alma-pgdata:

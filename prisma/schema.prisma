@@ -1,0 +1,65 @@
+// Prisma schema for the Alma lead-management application.
+// Prisma 7: the connection URL lives in `prisma.config.ts`, NOT here, and the
+// client is generated via the `prisma-client` generator into `src/generated`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Lifecycle state of a lead. A lead starts as PENDING and transitions to
+/// REACHED_OUT once an attorney has manually reached out to the prospect.
+enum LeadState {
+  PENDING
+  REACHED_OUT
+}
+
+/// Role of an internal user who can access the authenticated dashboard.
+enum Role {
+  ATTORNEY
+  ADMIN
+}
+
+/// A lead submitted through the public form by a prospect.
+model Lead {
+  id        String    @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String
+  // Pointer into the StorageService (e.g. a key on disk / object storage),
+  // plus the metadata needed to serve the file back with the right headers.
+  resumeKey      String
+  resumeFilename String
+  resumeMimeType String
+  resumeSize     Int
+  state          LeadState @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  // Audit trail for the PENDING -> REACHED_OUT transition.
+  reachedOutAt   DateTime?
+  reachedOutBy   User?     @relation(fields: [reachedOutById], references: [id])
+  reachedOutById String?
+
+  @@index([state])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+/// An internal user (attorney/admin) who authenticates to the dashboard.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(ATTORNEY)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reachedOutLeads Lead[]
+
+  @@map("users")
+}
