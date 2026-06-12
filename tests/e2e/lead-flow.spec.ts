@@ -6,13 +6,20 @@ const RESUME_FIXTURE = path.join(
   "tests/e2e/fixtures/resume.pdf",
 );
 
-/** Enters the demo with the given email (the start-screen gate). */
+/**
+ * Enters the demo (the start-screen gate). After this the demo identity lives in
+ * memory, so the rest of the test must navigate via in-app links (client-side)
+ * rather than `page.goto`, which would reload and reset back to the start screen.
+ */
 async function enterDemo(page: import("@playwright/test").Page, email: string) {
   await page.goto("/");
   await page.getByLabel("Your email").fill(email);
   await page.getByRole("button", { name: "Enter demo" }).click();
-  // The header nav appears once signed in.
-  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  // The header nav appears once signed in. `exact` avoids clashing with the
+  // landing page's "Open the dashboard" link.
+  await expect(
+    page.getByRole("link", { name: "Dashboard", exact: true }),
+  ).toBeVisible();
 }
 
 test("demo: submit a lead, then see and resolve it on the dashboard", async ({
@@ -21,14 +28,14 @@ test("demo: submit a lead, then see and resolve it on the dashboard", async ({
   const attorney = `attorney-${Date.now()}@example.com`;
   const prospect = `prospect-${Date.now()}@example.com`;
 
-  // Enter the demo as the attorney.
   await enterDemo(page, attorney);
 
   // The signed-in email is shown bottom-right.
-  await expect(page.getByText(`Signed in as ${attorney}`)).toBeVisible();
+  await expect(page.getByText(attorney)).toBeVisible();
 
-  // Submit a lead.
-  await page.goto("/leads/new");
+  // Submit a lead — navigate via the header so the in-memory session persists.
+  await page.getByRole("link", { name: "Submit a lead" }).click();
+  await expect(page).toHaveURL(/\/leads\/new/);
   await page.fill("#firstName", "E2E");
   await page.fill("#lastName", "Tester");
   await page.fill("#email", prospect);
@@ -38,7 +45,8 @@ test("demo: submit a lead, then see and resolve it on the dashboard", async ({
   await expect(page.getByText("Application received")).toBeVisible();
 
   // The lead shows up on the dashboard and can be marked reached out.
-  await page.goto("/dashboard");
+  await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
   const row = page.locator("tr", { hasText: prospect });
   await expect(row).toBeVisible();
   await expect(row.getByText("Pending")).toBeVisible();

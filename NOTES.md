@@ -68,6 +68,14 @@ how it was caught and fixed.
    Caught by reading the Railway deploy logs (`ETIMEDOUT`/`ENETUNREACH :587`).
    Fixed by dispatching the emails fire-and-forget (the long-running server
    finishes them after responding) and adding fail-fast SMTP timeouts.
+6. **Two red CI jobs, diagnosed from the Actions logs.** (a) `tsc --noEmit` ran
+   before Next generated its route types, so `RouteContext` was "Cannot find
+   name" — fixed by making `typecheck` run `next typegen && tsc`. (b) The
+   Playwright E2E hit a strict-mode selector clash (the header `Dashboard` link
+   vs the landing "Open the dashboard" button) and, more subtly, used
+   `page.goto` between steps — which reloads and resets the **in-memory** demo
+   session back to the start screen — fixed with an exact selector and in-app
+   (client-side) navigation that preserves the session.
 
 ## Session transcripts
 

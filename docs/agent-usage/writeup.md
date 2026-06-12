@@ -33,8 +33,9 @@ user-enumeration signal the code was trying to remove. I caught it by reasoning
 about bcrypt's behavior on bad input, fixed it with a precomputed _real_ dummy
 hash, and added an integration test pinning the unknown-email path to 401.
 
-Four more catches are logged in [`../../NOTES.md`](../../NOTES.md) — a Prisma-7
-connection misstep, a `postinstall` env crash, a Vitest path-alias bug, and an
-email send that blocked the form's response — each surfaced by **running the
-thing**, not eyeballing it. Representative excerpts:
+Five more catches are logged in [`../../NOTES.md`](../../NOTES.md) — a Prisma-7
+connection misstep, a `postinstall` env crash, a Vitest path-alias bug, an email
+send that blocked the form's response, and two red CI jobs diagnosed from the
+GitHub Actions logs — each surfaced by **running the thing** (or reading its
+logs), not eyeballing it. Representative excerpts:
 [`transcripts.md`](./transcripts.md).
