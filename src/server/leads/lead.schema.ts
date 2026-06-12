@@ -1,18 +1,11 @@
 import { z } from "zod";
 import { LeadState } from "@/generated/prisma/client";
+import { ALLOWED_RESUME_MIME_TYPES, MAX_RESUME_BYTES } from "@/lib/resume";
 
 /**
- * Validation schemas for lead inputs. Pure (only depends on Zod), so these can
- * be shared with client components for matching front-end validation.
+ * Validation schemas for lead inputs. File constraints are imported from the
+ * pure `@/lib/resume` module so the client form can reuse them.
  */
-
-export const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5 MB
-
-export const ALLOWED_RESUME_MIME_TYPES = [
-  "application/pdf",
-  "application/msword", // .doc
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-] as const;
 
 /** File constraints for an uploaded resume/CV. */
 export const resumeFileSchema = z
