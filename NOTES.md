@@ -45,6 +45,14 @@ how it was caught and fixed.
    `prisma generate` with `DATABASE_URL` unset; fixed by reading
    `process.env.DATABASE_URL` directly so generation (which never connects)
    succeeds while connecting commands still error clearly.
+3. **Login timing-equalization bug (Phase 3).** To avoid leaking which emails
+   exist, the login service compares the password even when no user is found.
+   The agent's first version compared against a hand-written fake string
+   (`"$2a$10$invalid…"`), which is not a valid bcrypt hash — `bcrypt.compare`
+   can error on a malformed hash, which would surface as a 500 instead of the
+   intended 401. Fixed by precomputing a real dummy hash with
+   `bcrypt.hashSync(...)` at module load. Verified the unknown-email path
+   returns 401 via the end-to-end smoke test.
 
 ## Session transcripts
 
