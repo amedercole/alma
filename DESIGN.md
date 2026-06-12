@@ -138,29 +138,34 @@ by the service, not the route handler.
 
 ```mermaid
 sequenceDiagram
-  participant P as Prospect
+  actor P as Prospect
   participant API as POST /api/leads
   participant S as LeadService
-  participant ST as StorageService
+  participant ST as Storage
   participant DB as Postgres
   participant M as EmailService
 
   P->>API: multipart (fields + resume)
   API->>API: Zod validation (400 on failure)
-  API->>S: createLead(input)
+  API->>API: resolve session → attorney notify email
+  API->>S: createLead(input, notifyEmail)
   S->>ST: save(resume bytes)
   ST-->>S: key
   S->>DB: insert lead (PENDING)
-  S->>M: sendLeadCreatedEmails(lead)
+  S-->>API: lead
+  API-->>P: 201 (redirect to /thank-you)
+  Note over S,M: fire-and-forget, after the response
+  S->>M: sendLeadCreatedEmails(lead, notifyEmail)
   M-->>P: confirmation email
-  M-->>S: (attorney notification)
-  API-->>P: 201 + lead, redirect to /thank-you
+  M->>M: attorney notification → notify email
 ```
 
 Email is dispatched **fire-and-forget** (not awaited) with `Promise.allSettled`
 and per-message error logging, so a slow or failing mail provider never blocks
 the prospect's response or drops a captured lead — the long-running server
-finishes the send after responding. See [future work](#11-future-work) for the
+finishes the send after responding. The attorney recipient is the **signed-in
+attorney's email** (resolved from the session; falls back to
+`ATTORNEY_NOTIFY_EMAIL`). See [future work](#11-future-work) for the
 durable-outbox upgrade.
 
 ## 7. Key decisions & trade-offs
@@ -220,8 +225,9 @@ durable-outbox upgrade.
   and `LeadService` with in-memory fakes (the DI seams).
 - **Integration (Vitest + live Postgres):** real repository + on-disk storage
   for the lead lifecycle, and real login.
-- **E2E (Playwright):** submit → thank-you, login, dashboard mark-reached-out,
-  and the auth redirect.
+- **E2E (Playwright):** the demo flow — enter an email on the start screen,
+  submit a lead, then see it on the dashboard and mark it reached out — plus the
+  dashboard being gated until you enter the demo.
 - **CI (GitHub Actions):** Postgres service container; lint + typecheck + tests,
   with a separate Chromium E2E job.
 
