@@ -60,6 +60,14 @@ how it was caught and fixed.
    the Next/tsc build focused). Caught on the first `vitest run`; fixed by
    configuring an explicit `resolve.alias` in `vitest.config.ts` instead of
    depending on tsconfig — independent of the include/exclude set.
+5. **Lead submit blocked on email (caught from prod logs).** `createLead`
+   `await`ed `sendLeadCreatedEmails` before responding. Emails were already
+   best-effort (errors caught), but _awaiting_ a slow/failing send still blocked
+   the HTTP response — on Railway, where outbound SMTP is blocked, the form hung
+   on "Submitting…" for the full SMTP timeout while the lead was already saved.
+   Caught by reading the Railway deploy logs (`ETIMEDOUT`/`ENETUNREACH :587`).
+   Fixed by dispatching the emails fire-and-forget (the long-running server
+   finishes them after responding) and adding fail-fast SMTP timeouts.
 
 ## Session transcripts
 

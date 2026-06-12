@@ -22,6 +22,11 @@ export class SmtpEmailProvider implements EmailProvider {
       port: config.port,
       secure: config.port === 465, // 465 = implicit TLS; 587 = STARTTLS
       auth: { user: config.user, pass: config.pass },
+      // Fail fast rather than hanging for minutes when SMTP egress is blocked
+      // (e.g. some PaaS environments block outbound SMTP ports).
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
   }
 

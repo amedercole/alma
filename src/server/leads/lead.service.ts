@@ -48,7 +48,14 @@ export class LeadService {
       resumeSize: resume.size,
     });
 
-    await this.deps.email.sendLeadCreatedEmails(lead);
+    // Fire-and-forget: a captured lead must never wait on (or fail because of)
+    // email delivery. Errors are already isolated inside sendLeadCreatedEmails;
+    // the `.catch` is defensive. A production system would use a durable outbox
+    // (see DESIGN.md) — here the long-running server completes the send in the
+    // background after the prospect's response is sent.
+    void this.deps.email.sendLeadCreatedEmails(lead).catch((error) => {
+      console.error("Lead email dispatch failed:", error);
+    });
 
     return lead;
   }
