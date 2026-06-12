@@ -1,5 +1,7 @@
 # Alma — Lead Management
 
+**▶ Live demo: <https://alma-production-2def.up.railway.app>**
+
 A full-stack application for capturing and managing prospect **leads**.
 
 - **Public lead form** (no auth): a prospect submits first name, last name, email,
@@ -14,6 +16,16 @@ A full-stack application for capturing and managing prospect **leads**.
 > email, and a page refresh returns you to the start screen. See
 > **[How to use](#how-to-use)** and [`docs/USAGE.md`](./docs/USAGE.md).
 
+## Documentation
+
+| Document                                                               | What it is                                            |
+| ---------------------------------------------------------------------- | ----------------------------------------------------- |
+| [`docs/USAGE.md`](./docs/USAGE.md)                                     | How to use the app (prospect vs attorney walkthrough) |
+| [`DESIGN.md`](./DESIGN.md)                                             | System design — the why/how behind the choices        |
+| [`docs/agent-usage/writeup.md`](./docs/agent-usage/writeup.md)         | Coding-agent usage — ½-page writeup                   |
+| [`docs/agent-usage/transcripts.md`](./docs/agent-usage/transcripts.md) | Representative prompt logs / session excerpts         |
+| [`NOTES.md`](./NOTES.md)                                               | Agent-vs-hand-written attribution + bug log           |
+
 ## Tech stack
 
 | Concern    | Choice                                                           |
@@ -26,9 +38,6 @@ A full-stack application for capturing and managing prospect **leads**.
 | Storage    | Pluggable `StorageService` — local disk / Railway volume (or S3) |
 | Tests      | Vitest (unit + integration) and Playwright (E2E)                 |
 | Deploy     | Railway (Postgres + a volume for resume files)                   |
-
-See [`DESIGN.md`](./DESIGN.md) for the architecture and the rationale behind
-these choices, and [`NOTES.md`](./NOTES.md) for how coding agents were used.
 
 ## Prerequisites
 

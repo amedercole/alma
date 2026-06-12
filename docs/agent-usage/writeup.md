@@ -1,36 +1,40 @@
 # Coding-agent usage — writeup
 
-**Tool.** The entire project was built with **Claude Code** (an agentic CLI)
-driving file edits, shell, migrations, the dev server, and `curl`/test runs. I
-(the human) owned the requirements interpretation, the stack decision, and a
-review gate between each phase; the agent produced the code and verified it.
+**Tools.** I built this end to end through **Claude Code** (an agentic CLI),
+driving file edits, shell, Prisma migrations, a live Postgres, the dev server,
+`curl`, and the test runner from one place — plus reading the libraries' own
+installed docs when their versions were newer than the model's knowledge.
 
-**Delegated vs. hand-written.** I delegated essentially all of the _writing_:
-scaffolding, the Prisma schema/migrations, the layered server (service /
-repository / state machine), the storage and email abstractions, the auth/DAL,
-the route handlers, the React UI, the tests, and CI. I kept the _direction_ for
-myself: choosing Next.js + Prisma 7 + Railway, insisting on a storage
-abstraction and a lightweight JWT session (vs. a heavyweight auth library),
-defining the state-machine rule, and accepting/redirecting each phase. The
-division was deliberate — agents are fast and reliable at well-specified
-implementation, so the leverage is in specifying tightly and then _verifying_,
-not in typing.
+**What I delegated vs. wrote myself.** I treated the agent as a fast, literal
+implementer and kept the judgment for myself. I owned the **direction**: the
+requirements interpretation; the stack (Next.js 16 + Prisma 7 + Railway); the
+layered architecture (route → service → repository with dependency injection);
+the `PENDING → REACHED_OUT` state-machine rule; the **provider abstractions** for
+storage and email; the demo-mode UX; and a review gate between every phase. I
+delegated the **writing** of nearly everything else — scaffolding,
+schema/migrations, the service/auth/route layers, the React UI, 38
+unit/integration/E2E tests, and CI — and reviewed each phase before moving on.
+The leverage isn't in typing; it's in specifying tightly and then
+**verifying hard**.
 
-**Verification, not vibes.** Because this Next.js (16) and Prisma (7) are newer
-than the agent's training data, I had it read the _installed_ version's docs and
-prove behavior empirically rather than trust memory: it ran `prisma generate`/
-`migrate` against a live Postgres, exercised every endpoint with `curl`, and ran
-37 unit/integration tests.
+**Verification over trust.** Because the installed Next.js (16) and Prisma (7)
+have breaking changes vs. the model's training data, I made the agent **read the
+bundled docs and prove behavior empirically** instead of recalling it: it ran
+`prisma generate`/`migrate` against a real database, exercised every endpoint
+with `curl`, and ran the full suite — and at one point diagnosed a production bug
+straight from the Railway deploy logs.
 
-**A subtly-bad output it caught (and fixed).** Several are logged in
-[`../../NOTES.md`](../../NOTES.md); the sharpest: the login service does a
-password compare even when the email is unknown (to avoid leaking which emails
-exist). The agent's first version compared against a _hand-written_ fake string
-`"$2a$10$invalid…"`, which is **not a valid bcrypt hash** — `bcrypt.compare` can
-throw on a malformed hash, turning the intended **401** into a **500** (and
-ironically re-introducing an enumeration signal). It was caught by reasoning
-about bcrypt's behavior on bad input and fixed by precomputing a _real_ dummy
-hash with `bcrypt.hashSync(...)` at module load; the unknown-email path was then
-confirmed to return 401 in both the smoke test and the integration tests.
+**A subtly-bad output I caught.** To avoid leaking which emails exist, the login
+service compares a password even when the user isn't found. The agent's first
+version compared against a **hand-written fake string** (`"$2a$10$invalid…"`) —
+which isn't a valid bcrypt hash. `bcrypt.compare` can _throw_ on a malformed
+hash, which would turn the intended **401 into a 500** and reintroduce the very
+user-enumeration signal the code was trying to remove. I caught it by reasoning
+about bcrypt's behavior on bad input, fixed it with a precomputed _real_ dummy
+hash, and added an integration test pinning the unknown-email path to 401.
 
-See [`transcripts.md`](./transcripts.md) for representative session excerpts.
+Four more catches are logged in [`../../NOTES.md`](../../NOTES.md) — a Prisma-7
+connection misstep, a `postinstall` env crash, a Vitest path-alias bug, and an
+email send that blocked the form's response — each surfaced by **running the
+thing**, not eyeballing it. Representative excerpts:
+[`transcripts.md`](./transcripts.md).
