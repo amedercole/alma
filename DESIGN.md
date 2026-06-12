@@ -177,9 +177,12 @@ a transient mail outage must never drop a captured lead. See
   httpOnly cookie + bcrypt is transparent, easy to test, and dependency-light.
   The real boundary is the **DAL** (`requireSession*`) checked next to the data;
   `proxy.ts` only does optimistic redirects (per Next.js guidance).
-- **Resend with a console fallback.** Real provider in prod; when
-  `RESEND_API_KEY` is unset, emails are logged so the app runs locally with zero
-  email setup.
+- **Pluggable email provider (SMTP / Resend / console).** The provider is chosen
+  from config behind one `EmailProvider` interface: **SMTP** (e.g. Gmail with an
+  App Password) to send _from your own address_ with no domain verification,
+  **Resend** for an API-based provider (needs a verified domain for custom From
+  addresses), or a **console** transport so the app runs locally with zero email
+  setup.
 - **Layered server (route → service → repository).** Route handlers stay thin;
   business rules and the state machine live in the service; Prisma is isolated
   in the repository behind an interface, which is what makes the unit tests fast

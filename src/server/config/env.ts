@@ -20,9 +20,16 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters"),
 
-  // Email. RESEND_API_KEY is optional: when absent we fall back to a console
-  // transport so the app is fully runnable locally without credentials.
+  // Email. Provider is auto-selected (see src/server/email): SMTP if SMTP_HOST
+  // is set, else Resend if RESEND_API_KEY is set, else a console transport so
+  // the app is fully runnable locally without credentials.
   RESEND_API_KEY: z.string().min(1).optional(),
+  // SMTP (e.g. Gmail with an App Password) — lets mail be sent *from your own
+  // address* without verifying a domain.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).default("Alma Leads <onboarding@resend.dev>"),
   ATTORNEY_NOTIFY_EMAIL: z.email().default("attorney@example.com"),
 
@@ -49,5 +56,11 @@ function loadEnv(): Env {
 
 export const env: Env = loadEnv();
 
-/** True when a real email provider is configured. */
-export const isEmailConfigured = Boolean(env.RESEND_API_KEY);
+/** True when SMTP credentials are configured (preferred provider). */
+export const isSmtpConfigured = Boolean(
+  env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS,
+);
+
+/** True when a real email provider (SMTP or Resend) is configured. */
+export const isEmailConfigured =
+  isSmtpConfigured || Boolean(env.RESEND_API_KEY);
