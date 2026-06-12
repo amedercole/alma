@@ -53,6 +53,13 @@ how it was caught and fixed.
    intended 401. Fixed by precomputing a real dummy hash with
    `bcrypt.hashSync(...)` at module load. Verified the unknown-email path
    returns 401 via the end-to-end smoke test.
+4. **Vitest `@/` alias not resolving (Phase 6).** The first test setup used the
+   `vite-tsconfig-paths` plugin, but the suite failed with "Cannot find package
+   '@/...'". Root cause: the plugin only applies path mappings to files within
+   the tsconfig `include`, and `tests/` had been deliberately excluded (to keep
+   the Next/tsc build focused). Caught on the first `vitest run`; fixed by
+   configuring an explicit `resolve.alias` in `vitest.config.ts` instead of
+   depending on tsconfig — independent of the include/exclude set.
 
 ## Session transcripts
 
