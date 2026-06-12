@@ -8,6 +8,12 @@ A full-stack application for capturing and managing prospect **leads**.
 - **Internal dashboard** (auth): attorneys view all leads and move each lead from
   `PENDING` to `REACHED_OUT`.
 
+> **Demo mode.** The hosted app opens on a start screen: enter an email and
+> you're signed in as an attorney with that address (a real session is
+> provisioned — the password step is just skipped). Leads you submit notify that
+> email, and a page refresh returns you to the start screen. See
+> **[How to use](#how-to-use)** and [`docs/USAGE.md`](./docs/USAGE.md).
+
 ## Tech stack
 
 | Concern    | Choice                                                           |
@@ -15,7 +21,7 @@ A full-stack application for capturing and managing prospect **leads**.
 | Framework  | Next.js 16 (App Router, TypeScript) — UI + REST API in one app   |
 | Database   | PostgreSQL via Prisma 7 (driver adapter `@prisma/adapter-pg`)    |
 | Validation | Zod                                                              |
-| Auth       | JWT session (`jose`) in an httpOnly cookie + `bcryptjs`          |
+| Auth       | JWT session (`jose`, httpOnly cookie) + `bcryptjs`; demo gate    |
 | Email      | Pluggable: SMTP (e.g. Gmail) or Resend (HTTPS); console in dev   |
 | Storage    | Pluggable `StorageService` — local disk / Railway volume (or S3) |
 | Tests      | Vitest (unit + integration) and Playwright (E2E)                 |
@@ -53,8 +59,28 @@ npm run db:seed        # creates attorney@alma.test / password123
 npm run dev            # http://localhost:3000
 ```
 
-- Public form: <http://localhost:3000/leads/new>
-- Dashboard: <http://localhost:3000/dashboard> (log in at `/login` with the seeded account)
+Open <http://localhost:3000>, enter any email on the **demo start screen**, then
+use **Submit a lead** and **Dashboard**. (The `db:seed` step above is optional
+locally — the demo gate provisions a session for whatever email you enter — but
+it is what seeds the attorney account on Railway deploys.)
+
+## How to use
+
+Full walkthrough: [`docs/USAGE.md`](./docs/USAGE.md). In short:
+
+**Start (demo gate).** Open the app → on the **"Demo project"** start screen enter
+an email → **Enter demo**. You're signed in as an attorney with that email (shown
+bottom-right). Refreshing the page returns you to the start screen.
+
+**As a prospect — submit a lead** (`/leads/new`): enter name + email, upload a
+resume (PDF/DOC/DOCX, ≤5 MB), submit. A confirmation email goes to the prospect
+and a notification goes to the attorney (the demo email).
+
+> 📩 The attorney notification can land in **spam** — check your junk folder.
+
+**As an attorney — manage leads** (`/dashboard`): see all leads with resume
+downloads, filter by All / Pending / Reached out, and click **Mark reached out**
+to move a `PENDING` lead to `REACHED_OUT` (one-way; it records who and when).
 
 ## Useful scripts
 

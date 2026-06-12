@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { errorToResponse } from "@/lib/errors";
-import { requireSession } from "@/server/auth/dal";
+import { getCurrentUser, requireSession } from "@/server/auth/dal";
 import {
   createLeadSchema,
   listLeadsQuerySchema,
@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
       email: formData.get("email"),
       resume: formData.get("resume"),
     });
-    const lead = await leadService.createLead(input);
+    // In the demo, the submitter is signed in as an attorney; route the
+    // notification to that email. Otherwise fall back to ATTORNEY_NOTIFY_EMAIL.
+    const currentUser = await getCurrentUser();
+    const lead = await leadService.createLead(input, {
+      notifyEmail: currentUser?.email,
+    });
     return Response.json(toLeadDTO(lead), { status: 201 });
   } catch (error) {
     return errorToResponse(error);

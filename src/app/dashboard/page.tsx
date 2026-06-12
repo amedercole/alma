@@ -6,7 +6,6 @@ import { listLeadsQuerySchema } from "@/server/leads/lead.schema";
 import { leadService } from "@/server/leads/lead.service";
 import { toLeadDTO } from "@/server/leads/lead.types";
 import { LeadsTable } from "@/components/leads-table";
-import { LogoutButton } from "@/components/logout-button";
 
 export const metadata: Metadata = {
   title: "Dashboard — Alma",
@@ -47,18 +46,15 @@ export default async function DashboardPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Leads
-          </h1>
-          {user && (
-            <p className="mt-1 text-sm text-slate-500">
-              Signed in as {user.name}
-            </p>
-          )}
-        </div>
-        <LogoutButton />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Leads
+        </h1>
+        {user && (
+          <p className="mt-1 text-sm text-slate-500">
+            Signed in as {user.email}
+          </p>
+        )}
       </div>
 
       <div className="mt-6 flex gap-2">

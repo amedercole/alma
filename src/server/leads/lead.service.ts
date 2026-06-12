@@ -28,7 +28,10 @@ export class LeadService {
    * Creates a lead from validated form input: stores the resume, persists the
    * record, then fires the prospect + attorney emails (best-effort).
    */
-  async createLead(input: CreateLeadInput): Promise<Lead> {
+  async createLead(
+    input: CreateLeadInput,
+    options?: { notifyEmail?: string },
+  ): Promise<Lead> {
     const { resume, firstName, lastName, email } = input;
 
     const bytes = new Uint8Array(await resume.arrayBuffer());
@@ -53,9 +56,11 @@ export class LeadService {
     // the `.catch` is defensive. A production system would use a durable outbox
     // (see DESIGN.md) — here the long-running server completes the send in the
     // background after the prospect's response is sent.
-    void this.deps.email.sendLeadCreatedEmails(lead).catch((error) => {
-      console.error("Lead email dispatch failed:", error);
-    });
+    void this.deps.email
+      .sendLeadCreatedEmails(lead, { attorneyEmail: options?.notifyEmail })
+      .catch((error) => {
+        console.error("Lead email dispatch failed:", error);
+      });
 
     return lead;
   }

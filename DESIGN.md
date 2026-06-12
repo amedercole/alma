@@ -27,7 +27,7 @@ flowchart TD
   subgraph Client
     PF[Public lead form\n/leads/new]
     DB_UI[Attorney dashboard\n/dashboard]
-    LOGIN[/login/]
+    GATE[Demo start screen /]
   end
 
   subgraph "Next.js app"
@@ -35,7 +35,7 @@ flowchart TD
       RL[POST/GET /leads]
       RID[GET/PATCH /leads/:id]
       RR[GET /leads/:id/resume]
-      RA[POST /auth/login·logout]
+      RA[POST /demo/login + /auth/*]
     end
     PROXY[proxy.ts\noptimistic auth redirect]
     subgraph Server[Server layer]
@@ -53,7 +53,7 @@ flowchart TD
 
   PF -->|multipart| RL
   DB_UI --> SVC
-  LOGIN --> RA
+  GATE -->|email| RA
   RL --> SVC
   RID --> SVC
   RR --> SVC
@@ -106,15 +106,16 @@ state transition.
 
 ## 4. API
 
-| Method | Route                   | Auth   | Notes                                 |
-| ------ | ----------------------- | ------ | ------------------------------------- |
-| POST   | `/api/leads`            | Public | multipart; creates lead, sends emails |
-| GET    | `/api/leads`            | Auth   | `?state=` filter                      |
-| GET    | `/api/leads/:id`        | Auth   |                                       |
-| PATCH  | `/api/leads/:id`        | Auth   | `{ "state": "REACHED_OUT" }`          |
-| GET    | `/api/leads/:id/resume` | Auth   | streams the file                      |
-| POST   | `/api/auth/login`       | Public | sets the session cookie               |
-| POST   | `/api/auth/logout`      | Auth   | clears it                             |
+| Method | Route                   | Auth   | Notes                                                                          |
+| ------ | ----------------------- | ------ | ------------------------------------------------------------------------------ |
+| POST   | `/api/leads`            | Public | multipart; creates lead, sends emails                                          |
+| GET    | `/api/leads`            | Auth   | `?state=` filter                                                               |
+| GET    | `/api/leads/:id`        | Auth   |                                                                                |
+| PATCH  | `/api/leads/:id`        | Auth   | `{ "state": "REACHED_OUT" }`                                                   |
+| GET    | `/api/leads/:id/resume` | Auth   | streams the file                                                               |
+| POST   | `/api/auth/login`       | Public | password login; sets the session cookie                                        |
+| POST   | `/api/auth/logout`      | Auth   | clears it                                                                      |
+| POST   | `/api/demo/login`       | Public | demo: upserts an attorney for the email and provisions a session (no password) |
 
 Errors are normalized in one place (`errorToResponse`): Zod → `400` with
 field details, `AppError` subclasses carry their status
@@ -189,6 +190,14 @@ durable-outbox upgrade.
   business rules and the state machine live in the service; Prisma is isolated
   in the repository behind an interface, which is what makes the unit tests fast
   and the integration tests meaningful.
+- **Demo mode (no password step).** The hosted app is a public demo: a start
+  screen takes an email and provisions a _real_ signed session (upserting an
+  attorney `User`), so the dashboard keeps its actual auth boundary while the
+  demo stays frictionless. Lead notifications are routed to the signed-in
+  attorney's email (read from the session, not client input), and the demo
+  identity is held in memory so a page refresh resets to the start screen.
+  Password login (`/api/auth/login`) and the auth machinery remain for the
+  non-demo path and are covered by tests.
 
 ## 8. Security
 
@@ -200,6 +209,10 @@ durable-outbox upgrade.
 - Session cookie is httpOnly, `sameSite=lax`, and `Secure` in production.
 - Inputs are validated with Zod (including file type/size); user values are
   HTML-escaped in emails; generated storage keys avoid path traversal.
+- **Demo trade-off:** `/api/demo/login` intentionally grants a session for any
+  email with no password — appropriate for a public demo, but it is the one
+  thing to disable (remove the route / gate it behind a flag) before treating
+  this as a real internal tool.
 
 ## 9. Testing
 

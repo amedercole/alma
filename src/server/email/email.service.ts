@@ -47,23 +47,32 @@ export class EmailService {
     await this.send({ to: lead.email, ...tpl });
   }
 
-  async sendAttorneyNotification(lead: LeadEmailContext): Promise<void> {
+  async sendAttorneyNotification(
+    lead: LeadEmailContext,
+    attorneyEmailOverride?: string,
+  ): Promise<void> {
     const tpl = attorneyNotificationTemplate(lead, this.config.appUrl);
-    await this.send({ to: this.config.attorneyEmail, ...tpl });
+    await this.send({
+      to: attorneyEmailOverride ?? this.config.attorneyEmail,
+      ...tpl,
+    });
   }
 
   /**
    * Sends both emails for a new lead. Failures are isolated and logged rather
    * than thrown, so a transient email outage never loses a captured lead.
+   * `attorneyEmail` overrides the configured notification recipient (used by
+   * the demo, where notifications go to the signed-in attorney).
    * Returns whether each message was sent (useful for tests/observability).
    * A production system would move this to a durable outbox/queue (see DESIGN.md).
    */
   async sendLeadCreatedEmails(
     lead: LeadEmailContext,
+    options?: { attorneyEmail?: string },
   ): Promise<{ prospect: boolean; attorney: boolean }> {
     const [prospect, attorney] = await Promise.allSettled([
       this.sendProspectConfirmation(lead),
-      this.sendAttorneyNotification(lead),
+      this.sendAttorneyNotification(lead, options?.attorneyEmail),
     ]);
 
     if (prospect.status === "rejected") {

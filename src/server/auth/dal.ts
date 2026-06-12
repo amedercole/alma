@@ -26,11 +26,11 @@ export async function requireSession(): Promise<SessionPayload> {
   return session;
 }
 
-/** For server pages: redirects to /login if unauthenticated. */
+/** For server pages: redirects to the start screen (/) if unauthenticated. */
 export async function requireSessionOrRedirect(): Promise<SessionPayload> {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
+    redirect("/");
   }
   return session;
 }

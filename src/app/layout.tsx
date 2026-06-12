@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
+import { DemoProvider } from "@/components/demo/demo-context";
+import { DemoGate } from "@/components/demo/demo-gate";
+import { DemoBadge } from "@/components/demo/demo-badge";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Alma — Lead Management",
+  title: "Alma — Lead Management (Demo)",
   description:
     "Submit your application and our attorneys will reach out to you.",
 };
@@ -16,33 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-            <Link
-              href="/"
-              className="text-lg font-semibold tracking-tight text-slate-900"
-            >
-              alma
-            </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link
-                href="/leads/new"
-                className="text-slate-600 hover:text-slate-900"
-              >
-                Submit a lead
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-slate-600 hover:text-slate-900"
-              >
-                Dashboard
-              </Link>
-            </nav>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-          {children}
-        </main>
+        <DemoProvider>
+          <SiteHeader />
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+            <DemoGate>{children}</DemoGate>
+          </main>
+          <DemoBadge />
+        </DemoProvider>
       </body>
     </html>
   );

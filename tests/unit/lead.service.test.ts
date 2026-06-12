@@ -113,6 +113,23 @@ describe("LeadService", () => {
     expect(recipients).toContain("attorney@alma.test"); // attorney
   });
 
+  it("routes the attorney notification to the notifyEmail override", async () => {
+    await service.createLead(
+      {
+        firstName: "Ada",
+        lastName: "Lovelace",
+        email: "ada@example.com",
+        resume: makeResume(),
+      },
+      { notifyEmail: "manager@company.com" },
+    );
+
+    const recipients = emailProvider.sent.map((m) => m.to);
+    expect(recipients).toContain("ada@example.com"); // prospect unchanged
+    expect(recipients).toContain("manager@company.com"); // override
+    expect(recipients).not.toContain("attorney@alma.test");
+  });
+
   it("throws NotFoundError for a missing lead", async () => {
     await expect(service.getLead("does-not-exist")).rejects.toBeInstanceOf(
       NotFoundError,

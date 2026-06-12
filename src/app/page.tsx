@@ -18,10 +18,10 @@ export default function Home() {
           Submit your application
         </Link>
         <Link
-          href="/login"
+          href="/dashboard"
           className="rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Attorney login
+          Open the dashboard
         </Link>
       </div>
     </div>
