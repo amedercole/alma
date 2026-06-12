@@ -73,7 +73,7 @@ npm run dev            # http://localhost:3000
 
 ## Deployment (Railway)
 
-A full walkthrough lives in [`DESIGN.md`](./DESIGN.md#deployment). In short:
+A full walkthrough lives in [`DESIGN.md`](./DESIGN.md#10-deployment-railway). In short:
 provision a Postgres plugin, attach a volume mounted at `STORAGE_LOCAL_DIR`, set
 the environment variables from `.env.example`, and Railway builds with
 `npm run build` and applies migrations with `npm run db:migrate:deploy`.
